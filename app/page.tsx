@@ -37,25 +37,22 @@ interface Product {
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
   const heroWrapperRef = useRef<HTMLDivElement>(null);
-  const floatingTeeRef = useRef<HTMLImageElement>(null);
-  const leftTeeRef = useRef<HTMLImageElement>(null);
-  const rightTeeRef = useRef<HTMLImageElement>(null);
+  const floatingTeeRef = useRef<HTMLDivElement>(null);
+  const leftTeeRef = useRef<HTMLDivElement>(null);
+  const rightTeeRef = useRef<HTMLDivElement>(null);
 
   const leftTextRef = useRef<HTMLDivElement>(null);
   const rightSpecRef = useRef<HTMLDivElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
 
-  // Dark Mode Durumu
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [activeCategory, setActiveCategory] = useState<string>("Tümü");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
-  // Pop-up içi seçimler
   const [selectedSize, setSelectedSize] = useState<string>("M");
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0);
   const [favorites, setFavorites] = useState<number[]>([]);
 
-  // POP-UP AÇILDIĞINDA ARKA PLANI KİLİTLEME
   useEffect(() => {
     if (selectedProduct) {
       document.body.style.overflow = "hidden";
@@ -157,43 +154,72 @@ export default function Home() {
     }, (context) => {
       const { isMobile } = context.conditions as { isMobile: boolean; isDesktop: boolean };
 
+      // MOBİL İÇİN YAVAŞ, ADIM ADIM İLERLEYEN ZAMAN ÇİZELGESİ
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: heroWrapperRef.current,
           start: "top top",
-          end: isMobile ? "+=180%" : "+=220%",
-          scrub: 0.8,
+          end: isMobile ? "+=550%" : "+=240%", // Mobilde mesafeyi 5.5 katına çıkarıp yavaşlattık
+          scrub: isMobile ? 1.5 : 0.8,         // Yüksek scrub parmak kaydırmasını toklaştırır
           pin: true,
           anticipatePin: 1,
         },
       });
 
+      // 1. KAYDIRMA: Yazılar kaybolur, beyaz tişört sola hafifçe meyledip sahneye yerleşir
       tl.to([leftTextRef.current, rightSpecRef.current], {
-        y: -30,
+        y: -40,
         opacity: 0,
-        duration: 0.5,
-        stagger: 0.08,
+        duration: 1,
         ease: "power2.out"
       })
       .to(watermarkRef.current, {
         opacity: 0.01,
-        scale: 1.04,
-        duration: 0.6
+        scale: 1.05,
+        duration: 1
       }, "<")
       .to(floatingTeeRef.current, {
-        scale: isMobile ? 1.05 : 1.15,
-        rotateZ: isMobile ? -4 : -6,
-        y: isMobile ? 5 : 10,
-        duration: 1,
+        rotateZ: isMobile ? -5 : -6,
+        x: isMobile ? -15 : -35,
+        scale: isMobile ? 1.08 : 1.15,
+        duration: 1.2,
         ease: "power1.inOut"
       }, "<")
+
+      // 2. KAYDIRMA: Sol arkadan Kırmızı tişört süzülerek gelir
       .fromTo(leftTeeRef.current, 
-        { opacity: 0, x: isMobile ? -50 : -130, scale: isMobile ? 0.82 : 0.95, rotateZ: -8 },
-        { opacity: 1, x: 0, scale: isMobile ? 0.92 : 1.05, rotateZ: -4, duration: 1, ease: "power2.out" }
+        { 
+          opacity: 0, 
+          x: isMobile ? -160 : -320, 
+          rotateZ: -12,
+          scale: isMobile ? 0.8 : 0.95
+        },
+        { 
+          opacity: 1, 
+          x: isMobile ? -75 : -190, 
+          rotateZ: -5, 
+          scale: isMobile ? 0.92 : 1.02, 
+          duration: 1.5, 
+          ease: "power2.out" 
+        }
       )
+
+      // 3. KAYDIRMA: Sağ arkadan Siyah tişört süzülerek gelir (3'lü deste kilitlenir)
       .fromTo(rightTeeRef.current,
-        { opacity: 0, x: isMobile ? 50 : 130, scale: isMobile ? 0.82 : 0.95, rotateZ: 2 },
-        { opacity: 1, x: 0, scale: isMobile ? 0.92 : 1.05, rotateZ: isMobile ? -5 : -8, duration: 1, ease: "power2.out" }
+        { 
+          opacity: 0, 
+          x: isMobile ? 160 : 320, 
+          rotateZ: 10,
+          scale: isMobile ? 0.8 : 0.95
+        },
+        { 
+          opacity: 1, 
+          x: isMobile ? 75 : 190, 
+          rotateZ: -8, 
+          scale: isMobile ? 0.92 : 1.02, 
+          duration: 1.5, 
+          ease: "power2.out" 
+        }
       );
     });
 
@@ -264,10 +290,9 @@ export default function Home() {
           </div>
         </header>
 
-        {/* 1. KISIM: Three.js 3D Kumaş Mesh Entegreli Hero Alanı */}
-        <section ref={heroWrapperRef} className="relative w-full h-[100svh] min-h-[580px] flex items-center justify-center overflow-hidden px-4 sm:px-8 md:px-20">
+        {/* 1. KISIM: KATMANLI, BÜYÜK VE TOK MOBİL HERO ALANI */}
+        <section ref={heroWrapperRef} className="relative w-full h-[100svh] min-h-[580px] flex items-center justify-center overflow-hidden px-4">
           
-          {/* THREE.JS İNTERAKTİF 3D KUMAŞ TUVALİ */}
           <FabricCanvas isDarkMode={isDarkMode} />
 
           <div 
@@ -291,15 +316,18 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 3'LÜ TİŞÖRT KONTEYNERİ */}
-          <div className="relative z-20 flex items-center justify-center gap-1 sm:gap-4 md:gap-8 pointer-events-none w-full max-w-4xl px-2 mt-12 sm:mt-0">
+          {/* SIKIŞMAYA İZİN VERMEYEN KATMANLI (ABSOLUTE) TİŞÖRT SAHNESİ */}
+          <div className="relative z-20 flex items-center justify-center pointer-events-none w-full h-[380px] md:h-[460px] mt-6 sm:mt-0">
             
-            <div className="w-[28vw] max-w-[280px] flex items-center justify-center">
+            {/* 1. Sol: Kırmızı Tişört (Arkada, z-10) */}
+            <div 
+              ref={leftTeeRef} 
+              className="absolute w-[50vw] max-w-[280px] md:w-[320px] flex items-center justify-center opacity-0 will-change-transform z-10"
+            >
               <img
-                ref={leftTeeRef}
                 src="/red.png"
                 alt="GMore Tee Red"
-                className="w-full h-auto object-contain opacity-0 will-change-transform drop-shadow-[0_15px_20px_rgba(0,0,0,0.07)]"
+                className="w-full h-auto object-contain drop-shadow-[0_15px_20px_rgba(0,0,0,0.08)]"
                 onError={(e) => {
                   e.currentTarget.src = "https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvMzg4LXBhbGxvLTQxNDEtbXlyLTAzLnBuZw.png";
                   e.currentTarget.style.filter = "saturate(1.4) hue-rotate(320deg)";
@@ -307,24 +335,30 @@ export default function Home() {
               />
             </div>
 
-            <div className="w-[34vw] max-w-[340px] flex items-center justify-center">
+            {/* 2. Merkez: Beyaz Tişört (Önde, z-20, DEV BOYUTTA w-[72vw]) */}
+            <div 
+              ref={floatingTeeRef} 
+              className="relative w-[72vw] max-w-[340px] md:w-[390px] flex items-center justify-center will-change-transform z-20"
+            >
               <img
-                ref={floatingTeeRef}
                 src="/beyazz.png"
                 alt="GMore Tee White"
-                className="w-full h-auto object-contain will-change-transform drop-shadow-[0_20px_25px_rgba(0,0,0,0.08)]"
+                className="w-full h-auto object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.12)]"
                 onError={(e) => {
                   e.currentTarget.src = "https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvMzg4LXBhbGxvLTQxNDEtbXlyLTAzLnBuZw.png";
                 }}
               />
             </div>
 
-            <div className="w-[28vw] max-w-[280px] flex items-center justify-center">
+            {/* 3. Sağ: Siyah Tişört (Arkada, z-10) */}
+            <div 
+              ref={rightTeeRef} 
+              className="absolute w-[50vw] max-w-[280px] md:w-[320px] flex items-center justify-center opacity-0 will-change-transform z-10"
+            >
               <img
-                ref={rightTeeRef}
                 src="/black.png"
                 alt="GMore Tee Black"
-                className="w-full h-auto object-contain opacity-0 will-change-transform drop-shadow-[0_15px_20px_rgba(0,0,0,0.07)]"
+                className="w-full h-auto object-contain drop-shadow-[0_15px_20px_rgba(0,0,0,0.08)]"
                 onError={(e) => {
                   e.currentTarget.src = "https://images.rawpixel.com/image_png_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvMzg4LXBhbGxvLTQxNDEtbXlyLTAzLnBuZw.png";
                   e.currentTarget.style.filter = "brightness(0.25)";
@@ -591,12 +625,11 @@ export default function Home() {
           <p className="text-[10px] tracking-widest uppercase">© {new Date().getFullYear()} GMore & Co. Tüm Hakları Saklıdır.</p>
         </footer>
 
-        {/* POP-UP MODAL (KAYDIRMA KİLİDİ DÜZELTİLDİ: data-lenis-prevent & overscroll-contain) */}
+        {/* Pop-up Modal */}
         {selectedProduct && (
           <div 
             className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fadeIn"
             onClick={(e) => {
-              // Dışarı tıklayınca kapatma
               if (e.target === e.currentTarget) setSelectedProduct(null);
             }}
           >
